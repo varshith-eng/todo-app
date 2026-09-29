@@ -1,20 +1,35 @@
 import { useState } from 'react';
+import { formatDueDate, isOverdue } from '../hooks/useTodos.js';
 
 export default function TodoItem({ todo, onToggle, onDelete, onEdit }) {
   const [isEditing, setIsEditing] = useState(false);
   const [draft, setDraft] = useState(todo.text);
+  const [draftDate, setDraftDate] = useState(todo.dueDate || '');
+
+  const overdue = isOverdue(todo);
 
   const saveEdit = () => {
-    if (draft.trim() && draft.trim() !== todo.text) {
-      onEdit(todo.id, draft);
+    const textChanged = draft.trim() && draft.trim() !== todo.text;
+    const dateChanged = (draftDate || null) !== (todo.dueDate || null);
+    if (textChanged || dateChanged) {
+      onEdit(todo.id, draft, draftDate || null);
     } else {
       setDraft(todo.text);
+      setDraftDate(todo.dueDate || '');
     }
     setIsEditing(false);
   };
 
+  const cancelEdit = () => {
+    setDraft(todo.text);
+    setDraftDate(todo.dueDate || '');
+    setIsEditing(false);
+  };
+
   return (
-    <li className={`todo-item ${todo.completed ? 'completed' : ''}`}>
+    <li
+      className={`todo-item ${todo.completed ? 'completed' : ''} ${overdue ? 'overdue' : ''}`}
+    >
       <label className="todo-check">
         <input
           type="checkbox"
@@ -25,35 +40,64 @@ export default function TodoItem({ todo, onToggle, onDelete, onEdit }) {
         <span className="checkmark" aria-hidden="true" />
       </label>
 
-      {isEditing ? (
-        <input
-          className="todo-edit-input"
-          value={draft}
-          autoFocus
-          maxLength={200}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={saveEdit}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') saveEdit();
-            if (e.key === 'Escape') {
+      <div className="todo-main">
+        {isEditing ? (
+          <div className="todo-edit-row">
+            <input
+              className="todo-edit-input"
+              value={draft}
+              autoFocus
+              maxLength={200}
+              onChange={(e) => setDraft(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') saveEdit();
+                if (e.key === 'Escape') cancelEdit();
+              }}
+              aria-label="Edit todo"
+            />
+            <input
+              className="todo-date small"
+              type="date"
+              value={draftDate}
+              onChange={(e) => setDraftDate(e.target.value)}
+              aria-label="Edit due date"
+            />
+          </div>
+        ) : (
+          <span
+            className="todo-text"
+            onDoubleClick={() => {
               setDraft(todo.text);
-              setIsEditing(false);
-            }
-          }}
-          aria-label="Edit todo"
-        />
-      ) : (
-        <span
-          className="todo-text"
-          onDoubleClick={() => {
-            setDraft(todo.text);
-            setIsEditing(true);
-          }}
-          title="Double-click to edit"
-        >
-          {todo.text}
-        </span>
-      )}
+              setDraftDate(todo.dueDate || '');
+              setIsEditing(true);
+            }}
+            title="Double-click to edit"
+          >
+            {todo.text}
+          </span>
+        )}
+
+        {!isEditing && todo.dueDate && (
+          <span
+            className={`due-badge ${overdue ? 'due-overdue' : todo.completed ? 'due-done' : ''}`}
+            title={overdue ? 'Overdue!' : `Due ${todo.dueDate}`}
+          >
+            📅 {formatDueDate(todo.dueDate)}
+            {overdue ? ' • overdue' : ''}
+          </span>
+        )}
+
+        {isEditing && (
+          <div className="todo-edit-actions">
+            <button className="mini-btn save" onClick={saveEdit}>
+              Save
+            </button>
+            <button className="mini-btn" onClick={cancelEdit}>
+              Cancel
+            </button>
+          </div>
+        )}
+      </div>
 
       <div className="todo-actions">
         {!isEditing && (
@@ -61,6 +105,7 @@ export default function TodoItem({ todo, onToggle, onDelete, onEdit }) {
             className="btn-icon"
             onClick={() => {
               setDraft(todo.text);
+              setDraftDate(todo.dueDate || '');
               setIsEditing(true);
             }}
             aria-label={`Edit "${todo.text}"`}

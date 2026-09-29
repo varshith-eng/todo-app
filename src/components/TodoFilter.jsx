@@ -2,6 +2,7 @@ const FILTERS = [
   { key: 'all', label: 'All' },
   { key: 'active', label: 'Active' },
   { key: 'completed', label: 'Completed' },
+  { key: 'overdue', label: 'Overdue' },
 ];
 
 export default function TodoFilter({

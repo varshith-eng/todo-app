@@ -10,6 +10,12 @@
   -webkit-font-smoothing: antialiased;
 }
 
+html.dark {
+  color: #e5e7eb;
+  background: linear-gradient(180deg, #111827 0%, #030712 320px, #030712 100%);
+  color-scheme: dark;
+}
+
 * {
   box-sizing: border-box;
 }
